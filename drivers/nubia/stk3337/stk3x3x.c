@@ -243,11 +243,11 @@ int stk_increment_init_flag = false;
 #define DEVICE_NAME     "stk3337"
 
 #define ALS_NAME "light"
-#define ALS_CAL_FILE_PATH        "/persist/sensors/als_cal_data"
-#define ALS_FAC_CAL_PATH        "/persist/sensors/als_fac_cal"
+#define ALS_CAL_FILE_PATH        "/mnt/vendor/persist/sensors/als_cal_data"
+#define ALS_FAC_CAL_PATH        "/mnt/vendor/persist/sensors/als_fac_cal"
 
 #define PS_NAME "proximity"
-#define PS_CAL_FILE_PATH      "/persist/sensors/xtalk_cal"
+#define PS_CAL_FILE_PATH      "/mnt/vendor/persist/sensors/xtalk_cal"
 
 #define PS_CALI_COUNT       5
 #define PS_FAR_DIFFER_VALUE   50
