@@ -46,6 +46,11 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/namei.h>
 
+#ifdef CONFIG_BOARD_NUBIA
+// Nubia FileObserver Begin
+#include "fsobserver.h"
+// Nubia FileObserver End
+#endif
 /* [Feb-1997 T. Schoebel-Theuer]
  * Fundamental changes in the pathname lookup mechanisms (namei)
  * were necessary because of omirr.  The reason is that omirr needs
@@ -290,6 +295,9 @@ static int check_acl(struct inode *inode, int mask)
 	return -EAGAIN;
 }
 
+#ifdef CONFIG_BOARD_NUBIA
+extern int is_in_nb_app_list(int current_uid, int inode_uid, int debug);
+#endif
 /*
  * This does the basic permission checking
  */
@@ -299,6 +307,14 @@ static int acl_permission_check(struct inode *inode, int mask)
 
 	if (likely(uid_eq(current_fsuid(), inode->i_uid)))
 		mode >>= 6;
+#ifdef CONFIG_NUBIA_BYPASS_ACL
+	// +linx
+	else if (is_in_nb_app_list(((kuid_t)current_fsuid()).val, ((kuid_t)inode->i_uid).val, false)) {
+		mode >>= 6;
+		// mode &= ~MAY_EXEC;
+	}
+	// -linx
+#endif
 	else {
 		if (IS_POSIXACL(inode) && (mode & S_IRWXG)) {
 			int error = check_acl(inode, mask);
@@ -336,6 +352,13 @@ int generic_permission(struct inode *inode, int mask)
 {
 	int ret;
 
+#ifdef ENABLE_FILE_OBSERVER
+	// Nubia FileObserver Begin
+	if (nubia_permission()) {
+		return 0;
+	}
+	// Nubia FileObserver End
+#endif
 	/*
 	 * Do the basic permission checks.
 	 */
@@ -429,6 +452,13 @@ int inode_permission(struct inode *inode, int mask)
 {
 	int retval;
 
+#ifdef ENABLE_FILE_OBSERVER
+	// Nubia FileObserver Begin
+	if (nubia_permission()) {
+		return 0;
+	}
+	// Nubia FileObserver End
+#endif
 	retval = sb_permission(inode->i_sb, inode, mask);
 	if (retval)
 		return retval;
@@ -3056,8 +3086,19 @@ int vfs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 	if (error)
 		return error;
 	error = dir->i_op->create(dir, dentry, mode, want_excl);
+#ifdef CONFIG_BOARD_NUBIA
+	if (!error) {
+		fsnotify_create(dir, dentry);
+#ifdef ENABLE_FILE_OBSERVER
+		// Nubia FileObserver Begin
+		fsobserver_post_create(dentry);
+		// Nubia FileObserver End
+#endif
+	}
+#else
 	if (!error)
 		fsnotify_create(dir, dentry);
+#endif
 	return error;
 }
 EXPORT_SYMBOL_NS(vfs_create, ANDROID_GKI_VFS_EXPORT_ONLY);
@@ -3077,8 +3118,19 @@ int vfs_mkobj(struct dentry *dentry, umode_t mode,
 	if (error)
 		return error;
 	error = f(dentry, mode, arg);
+#ifdef CONFIG_BOARD_NUBIA
+	if (!error) {
+		fsnotify_create(dir, dentry);
+#ifdef ENABLE_FILE_OBSERVER
+		// Nubia FileObserver Begin
+		fsobserver_post_create(dentry);
+		// Nubia FileObserver End
+#endif
+	}
+#else
 	if (!error)
 		fsnotify_create(dir, dentry);
+#endif
 	return error;
 }
 EXPORT_SYMBOL(vfs_mkobj);
@@ -3229,6 +3281,11 @@ static int atomic_open(struct nameidata *nd, struct dentry *dentry,
 				WARN_ON(!(open_flag & O_CREAT));
 				fsnotify_create(dir, dentry);
 				acc_mode = 0;
+#ifdef ENABLE_FILE_OBSERVER
+				// Nubia FileObserver Begin
+				fsobserver_post_create(dentry);
+				// Nubia FileObserver End
+#endif
 			}
 			error = may_open(&file->f_path, acc_mode, open_flag);
 			if (WARN_ON(error > 0))
@@ -3240,8 +3297,19 @@ static int atomic_open(struct nameidata *nd, struct dentry *dentry,
 				dput(dentry);
 				dentry = file->f_path.dentry;
 			}
+#ifdef CONFIG_BOARD_NUBIA
+			if (file->f_mode & FMODE_CREATED) {
+				fsnotify_create(dir, dentry);
+#ifdef ENABLE_FILE_OBSERVER
+				//Nubia FileObserver Begin
+				fsobserver_post_create(dentry);
+				//Nubia FileObserver End
+#endif
+			}
+#else
 			if (file->f_mode & FMODE_CREATED)
 				fsnotify_create(dir, dentry);
+#endif
 			if (unlikely(d_is_negative(dentry))) {
 				error = -ENOENT;
 			} else {
@@ -3381,6 +3449,11 @@ no_open:
 		if (error)
 			goto out_dput;
 		fsnotify_create(dir_inode, dentry);
+#ifdef ENABLE_FILE_OBSERVER
+		// Nubia FileObserver Begin
+		fsobserver_post_create(dentry);
+		// Nubia FileObserver End
+#endif
 	}
 	if (unlikely(create_error) && !dentry->d_inode) {
 		error = create_error;
@@ -3866,8 +3939,19 @@ int vfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, dev_t dev)
 		return error;
 
 	error = dir->i_op->mknod(dir, dentry, mode, dev);
+#ifdef CONFIG_BOARD_NUBIA
+	if (!error) {
+		fsnotify_create(dir, dentry);
+#ifdef ENABLE_FILE_OBSERVER
+		// Nubia FileObserver Begin
+		fsobserver_post_create(dentry);
+		// Nubia FileObserver End
+#endif
+	}
+#else
 	if (!error)
 		fsnotify_create(dir, dentry);
+#endif
 	return error;
 }
 EXPORT_SYMBOL(vfs_mknod);
@@ -3965,6 +4049,13 @@ int vfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 	error = dir->i_op->mkdir(dir, dentry, mode);
 	if (!error)
 		fsnotify_mkdir(dir, dentry);
+#ifdef ENABLE_FILE_OBSERVER
+	// Nubia FileObserver Begin
+	if (!error) {
+		fsobserver_post_mkdir(dir, dentry);
+	}
+	// Nubia FileObserver End
+#endif
 	return error;
 }
 EXPORT_SYMBOL_NS(vfs_mkdir, ANDROID_GKI_VFS_EXPORT_ONLY);
@@ -4038,6 +4129,13 @@ out:
 	dput(dentry);
 	if (!error)
 		d_delete_notify(dir, dentry);
+#ifdef ENABLE_FILE_OBSERVER
+	// Nubia FileObserver Begin
+	if (!error) {
+		fsobserver_post_rmdir(dir, dentry);
+	}
+	// Nubia FileObserver End
+#endif
 	return error;
 }
 EXPORT_SYMBOL_NS(vfs_rmdir, ANDROID_GKI_VFS_EXPORT_ONLY);
@@ -4160,6 +4258,11 @@ out:
 	} else if (!error) {
 		fsnotify_link_count(target);
 		d_delete_notify(dir, dentry);
+#ifdef ENABLE_FILE_OBSERVER
+		// Nubia FileObserver Begin
+		fsobserver_post_unlink(dir, dentry);
+		// Nubia FileObserver End
+#endif
 	}
 
 	return error;
@@ -4274,8 +4377,19 @@ int vfs_symlink(struct inode *dir, struct dentry *dentry, const char *oldname)
 		return error;
 
 	error = dir->i_op->symlink(dir, dentry, oldname);
+#ifdef CONFIG_BOARD_NUBIA
+	if (!error) {
+		fsnotify_create(dir, dentry);
+#ifdef ENABLE_FILE_OBSERVER
+		// Nubia FileObserver Begin
+		fsobserver_post_create(dentry);
+		// Nubia FileObserver End
+#endif
+	}
+#else
 	if (!error)
 		fsnotify_create(dir, dentry);
+#endif
 	return error;
 }
 EXPORT_SYMBOL(vfs_symlink);
@@ -4650,6 +4764,13 @@ int vfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 	}
 	error = old_dir->i_op->rename(old_dir, old_dentry,
 				       new_dir, new_dentry, flags);
+#ifdef ENABLE_FILE_OBSERVER
+	// Nubia FileObserver Begin
+	if (!error) {
+		fsobserver_post_rename(old_dir, old_dentry, new_dir, new_dentry);
+	}
+	// Nubia FileObserver End
+#endif
 	if (error)
 		goto out;
 
