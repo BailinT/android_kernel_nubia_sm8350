@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2020, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <drm/drm_edid.h>
@@ -136,6 +135,63 @@ static bool sde_cea_db_is_hdmi_hf_vsdb(const u8 *db)
 
 	return hdmi_id == HDMI_FORUM_IEEE_OUI;
 }
+
+static u8 *sde_edid_find_extended_tag_block(struct edid *edid, int blk_id)
+{
+	u8 *db = NULL;
+	u8 *cea = NULL;
+
+	if (!edid) {
+		SDE_ERROR("%s: invalid input\n", __func__);
+		return NULL;
+	}
+
+	cea = sde_find_cea_extension(edid);
+
+	if (cea && sde_cea_revision(cea) >= 3) {
+		int i, start, end;
+
+		if (sde_cea_db_offsets(cea, &start, &end))
+			return NULL;
+
+		sde_for_each_cea_db(cea, i, start, end) {
+			db = &cea[i];
+			if ((sde_cea_db_tag(db) == SDE_EXTENDED_TAG) &&
+				(db[1] == blk_id))
+				return db;
+		}
+	}
+	return NULL;
+}
+
+static u8 *
+sde_edid_find_block(struct edid *edid, int blk_id)
+{
+	u8 *db = NULL;
+	u8 *cea = NULL;
+
+	if (!edid) {
+		SDE_ERROR("%s: invalid input\n", __func__);
+		return NULL;
+	}
+
+	cea = sde_find_cea_extension(edid);
+
+	if (cea && sde_cea_revision(cea) >= 3) {
+		int i, start, end;
+
+		if (sde_cea_db_offsets(cea, &start, &end))
+			return NULL;
+
+		sde_for_each_cea_db(cea, i, start, end) {
+			db = &cea[i];
+			if (sde_cea_db_tag(db) == blk_id)
+				return db;
+		}
+	}
+	return NULL;
+}
+
 
 static const u8 *_sde_edid_find_block(const u8 *in_buf, u32 start_offset,
 	u8 type, u8 *len)
@@ -994,6 +1050,7 @@ int _sde_edid_update_modes(struct drm_connector *connector,
 			edid_ctrl->edid);
 
 		rc = drm_add_edid_modes(connector, edid_ctrl->edid);
+		sde_edid_set_mode_format(connector, edid_ctrl);
 		_sde_edid_update_dc_modes(connector, edid_ctrl);
 		sde_edid_parse_extended_blk_info(connector,
 				edid_ctrl->edid);
