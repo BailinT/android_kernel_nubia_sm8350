@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -78,6 +78,7 @@ enum pld_bus_type {
  * @PLD_BUS_WIDTH_MEDIUM: vote for medium bus bandwidth
  * @PLD_BUS_WIDTH_HIGH: vote for high bus bandwidth
  * @PLD_BUS_WIDTH_VERY_HIGH: vote for very high bus bandwidth
+ * @PLD_BUS_WIDTH_ULTRA_HIGH: vote for ultra high bus bandwidth
  * @PLD_BUS_WIDTH_LOW_LATENCY: vote for low latency bus bandwidth
  */
 enum pld_bus_width_type {
@@ -87,8 +88,11 @@ enum pld_bus_width_type {
 	PLD_BUS_WIDTH_MEDIUM,
 	PLD_BUS_WIDTH_HIGH,
 	PLD_BUS_WIDTH_VERY_HIGH,
+	PLD_BUS_WIDTH_ULTRA_HIGH,
+	PLD_BUS_WIDTH_MAX,
 	PLD_BUS_WIDTH_LOW_LATENCY,
 };
+
 
 #define PLD_MAX_FILE_NAME NAME_MAX
 
@@ -127,6 +131,16 @@ enum pld_platform_cap_flag {
 	PLD_HAS_EXTERNAL_SWREG = 0x01,
 	PLD_HAS_UART_ACCESS = 0x02,
 	PLD_HAS_DRV_SUPPORT = 0x04,
+};
+
+/**
+ * enum pld_wfc_mode - WFC Mode
+ * @PLD_WFC_MODE_OFF: WFC Inactive
+ * @PLD_WFC_MODE_ON: WFC Active
+ */
+enum pld_wfc_mode {
+	PLD_WFC_MODE_OFF,
+	PLD_WFC_MODE_ON,
 };
 
 /**
@@ -941,6 +955,24 @@ int pld_thermal_register(struct device *dev, unsigned long state, int mon_id);
  * Return: None
  */
 void pld_thermal_unregister(struct device *dev, int mon_id);
+
+/**
+ * pld_set_wfc_mode() - Sent WFC mode to FW via platform driver
+ * @dev: The device structure
+ * @wfc_mode: WFC Modes (0 => Inactive, 1 => Active)
+ *
+ * Return: Error code on error
+ */
+int pld_set_wfc_mode(struct device *dev, enum pld_wfc_mode wfc_mode);
+
+/**
+ * pld_bus_width_type_to_str() - Helper function to convert PLD bandwidth level
+ *				 to string
+ * @level: PLD bus width level
+ *
+ * Return: String corresponding to input "level"
+ */
+const char *pld_bus_width_type_to_str(enum pld_bus_width_type level);
 
 /**
  * pld_get_thermal_state() - Get the current thermal state from the PLD
