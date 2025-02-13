@@ -415,7 +415,7 @@ static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 	unsigned int type = button->type ?: EV_KEY;
 	int state;
 #ifdef CONFIG_NUBIA_KEYBOARD_GAMESWITCH
-	static gs_old_state;
+	static int gs_old_state;
 #endif
 
 #ifdef CONFIG_NUBIA_KEYBOARD_GAMESWITCH
