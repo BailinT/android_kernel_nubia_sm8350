@@ -269,8 +269,8 @@ static ssize_t dp_debug_selected_edid_show(struct kobject *kobj,
 	struct _user_select_sde_edid_info *info_temp = edid_info;
 	printk("%s: to show edid info \n", __func__);
 
-    if (!info_temp)
-        return rc;
+	if (!info_temp)
+		return rc;
 
 	sys_print_edid_info(info_temp);
 
@@ -281,7 +281,7 @@ static ssize_t dp_debug_selected_edid_show(struct kobject *kobj,
 	}
 
 	for(; info_temp; ){
-		snprintf(edid_modes_list, 40,
+		snprintf(edid_modes_list, 32,
 			"%dx%d %d %d %s\n",info_temp->h, info_temp->v,
 			info_temp->fps, info_temp->ratio, info_temp->device_name);
 		ret += snprintf(buf_edid+ret, max_size, "%s", edid_modes_list);
