@@ -1253,9 +1253,11 @@ static irqreturn_t goodix_ts_threadirq_func(int irq, void *data)
 
 	//if (!core_data->tools_ctrl_sync)
 	//	hw_ops->after_event_handler(core_data);
-	if (!core_data->tools_ctrl_sync && !ts_event->retry)
+	if (!core_data->tools_ctrl_sync && !ts_event->retry) {
 		hw_ops->after_event_handler(core_data);
 		ts_event->retry = 0;
+	}
+
 	return IRQ_HANDLED;
 }
 
