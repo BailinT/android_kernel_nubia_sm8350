@@ -114,6 +114,7 @@ struct dp_debug_private {
 	bool hotplug;
 	char exe_mode[SZ_32];
 	char reg_dump[SZ_32];
+	const char *name;
 	struct dp_hpd *hpd;
 	struct dp_link *link;
 	struct dp_panel *panel;
