@@ -1082,9 +1082,8 @@ static int fan_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 	printk(KERN_ERR "fan_probe enter\n");
 
 	fan = devm_kzalloc(&i2c->dev, sizeof(struct fan), GFP_KERNEL);
-	if (fan == NULL) {
+	if (fan == NULL)
 		return -ENOMEM;
-	}
 
 	fan->dev = &i2c->dev;
     fan->i2c = i2c;
