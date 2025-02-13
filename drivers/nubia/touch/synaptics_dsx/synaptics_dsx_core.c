@@ -1385,12 +1385,13 @@ static inline ssize_t synaptics_nubia_largepalm_store(struct device *dev,
 
 	struct synaptics_rmi4_data *rmi4_data = dev_get_drvdata(dev);
 
-	if (sscanf(buf, "%x", &input) != 1)
+	if (sscanf(buf, "%x", &input) != 1) {
 		return -EINVAL;
 		largepalm_0401[0] = input;
 		rmi4_data->largepalm = input;
 		retval = synaptics_rmi4_reg_write(rmi4_data, 0x0401, &largepalm_0401[0], sizeof(largepalm_0401)/ sizeof(unsigned char));
 		pr_err("%s largepalm =%d\n",__func__, input);
+	}
 	return count;
 
 }
